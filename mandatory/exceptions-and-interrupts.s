@@ -46,6 +46,8 @@ todo_3:
 	# TIP 2: Use the bitmask 0x2 = [bin] = 0000 ..... 0010
 	
 	# TIP 3: Use the ori (bitwise or immediate) instruction and store result in $s1.
+	#we store the result in s1, 0x2 can be seen as "bin2" and is the second least significant bit (bitmask bin number are the same as their hexa rep?)
+	ori $s1, $s0, 0x2 		#TODO: is s0 correct???
 	
         
  	# Update the memory mapped receiver control register.
@@ -136,12 +138,14 @@ __exception:
 
 	# Branch on value of the the exception code in $k1. 
 	
-	beq $k1, 12, __overflow_exception
+	beq $k1, 12, __overflow_exception #(exception code 12 = Arithmetic overflow)
 	
 todo_2:	
 	# TODO: Add code to branch to label __bad_address_exception for exception code 4. 	
+	beq $k1, 4, __bad_address_exception # k1 (and k0) is reserved for interrupt handlers (by convention) (excption code 4 = illegal adress)
 	
 	# TODO: Add code to branch to label __trap_exception for exception code 13. 
+	beq $k1, 13, __trap_exception
 	
 __unhandled_exception: 
     	
@@ -216,14 +220,14 @@ __keyboard_interrupt:
 todo_4:
 	# Store content of the memory mapped receiver data register in $k1.
 	
-	# lw $k1, 0xffff0004 # TODO: Uncomment this instruction. 
+	lw $k1, 0xffff0004 # TODO: Uncomment this instruction.(receiver data register = 0xffff0004)
 
 	# Use the MARS built-in system call 11 (print char) to print the character
 	# from receiver data.
 	
-	# move $a0, $k1 # TODO: Uncomment this line. 
-	# li $v0, 11    # TODO: Uncomment this line. 
-	# syscall       # TODO: Uncomment this line.
+	move $a0, $k1 # TODO: Uncomment this line. #make $a0 have the content of what is in $k1
+	li $v0, 11    # TODO: Uncomment this line. #$v0 is where the kernal check what syscall to perform
+	syscall       # TODO: Uncomment this line. #Perform the syscall action
 	
 	j __resume
 	
@@ -244,7 +248,7 @@ todo_1:
         # Otherwise the same instruction would be executed again causing the same 
         # exception again.
         
-        # addi $k0, $k0, 4 # TODO: Uncomment this instruction      
+        addi $k0, $k0, 4 # TODO: Each instruct is 4 bytes long, therefore we add by "4" to go to next instruct    
        
         # Update EPC in coprocessor 0.
         
