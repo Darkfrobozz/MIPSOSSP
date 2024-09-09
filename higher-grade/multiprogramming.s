@@ -423,7 +423,9 @@ __save_running_job_context:
 	
 TODO_1: # Save $a0, $a1, $s0 to the context. 
         	
-	
+	sw $a0, 8($k1)
+	sw $a1, 12($k1)
+	sw $s0, 16($k1)
 	lw $a0, __at            # NOTE: $at was saved to memory when entering the kernel!
 	sw $a0, 20($k1)         # $at
 	
@@ -459,6 +461,10 @@ __restore_job_context:
 	lw $v0,  4($k0) # $v0
 	
 TODO_2: # Restore $a0, $a1, $s0 from the context.
+
+	lw $a0, 8($k0)
+	lw $a1, 12($k0)
+	lw $s0, 16($k0)
 	
 	
 	# NOTE: $at may still be used by the kernel and will be restored later, right before 
@@ -553,10 +559,11 @@ __trap_handler:
 	
 	# Dispatch on the system call code in $v0. 
 	
-   	beqz $v0, __system_call_getjid
+   	beqz $v0, __system_call_getjid ## LOOK AT ME
    	
 TODO_3: # Jump to label __system_call_getc for system call code 12.
 	
+   	beq $v0, 12, __system_call_getc
    	
    	j __unsported_system_call
  
@@ -570,7 +577,7 @@ TODO_3: # Jump to label __system_call_getc for system call code 12.
 	jal __restore_job_context
 
 TODO_4: # Put the jid of the caller in register $a0.
-	
+	lw $a0, __running
 	# TIP: The kernel saved the jid of the running job in memory at label __running
         	
 	
@@ -592,7 +599,8 @@ __system_call_getc:
 	# resume once the requested character from the keyboard is ready.
 	
 TODO_5:	# Get address of the instruction (teqi) causing the exception. 
-	# and store it in $t0. 
+	# and store it in $t0.
+	mfc0 $t0, $14
 	
 	# TIP: When an exception (or interrupt) occurs, the address of the last 
 	# executed instruction is saved in the EPC (Exception Program Counter) 
@@ -600,7 +608,6 @@ TODO_5:	# Get address of the instruction (teqi) causing the exception.
 	
 	# TIP: Use the mfc0 (Move FRom Coprocessor 0) instruction to get the value of
 	# EPC.
-	
 	
 	# If resuming the caller at of the EPC this will cause the very same
 	# instruction to be executed again, i.e., executing the teqi used to initiate
@@ -611,11 +618,13 @@ TODO_5:	# Get address of the instruction (teqi) causing the exception.
 TODO_6:	# To resume at the instruction following the teqi instruction, 
 	# add 4 to EPC and store the result in $t1. 
 	
+	addi $t1, $t0, 4
 	# TIP: Use the addi (Add Immediate) instruction. 
 	
 	
 TODO_7:	# The value of EPC + 4 must now be saved in the context of the caller. 
-
+	
+	sw $t1, 0($k1)
 	# TIP: In the context, the field use to store the value were to resume is at 
 	# offset 0. 
 			
@@ -777,7 +786,9 @@ __getc_system_call_pending:
 	li $k1, 0xffff0004  
 	
 TODO_8:	# Before resuming the waiting job, put the ASCII value of the pressed
-	# key in register $v0. 
+	# key in register $v0.
+	lw $v0, 0($k1)
+	# andi $v0, $v0, 0x000000ff
 	
 	# TIP: $k1 contains the address of the memory mapped receiver data register. 
 	
