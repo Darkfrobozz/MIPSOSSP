@@ -280,14 +280,14 @@ job_getc_infinite_loop:
 	la $a0, CUSTOM_GETC_RESULT
 	syscall
 	
-	beq $s1, 11, skip
+#	beq $s1, 11, skip
 	# Get char from adress and put in buffer
-	sll $s2, $s1, 2         # Multiply by 4.
-	sw $s5, buffer($s2)
+#	sll $s2, $s1, 2         # Multiply by 4.
+#	sw $s5, buffer($s2)
 	
 	# Print buffer loop
-	addi $s1, $s1, 1
-skip:
+#	addi $s1, $s1, 1
+#skip:
 #	addi $s6, $zero, 0
 #print_loop:
 #	li $v0, 4
@@ -821,10 +821,20 @@ TODO_8:	# Before resuming the waiting job, put the ASCII value of the pressed
 	sll $t1, $s7, 2
 	sw $t0, s_buffer($t1)
 	# Last use t1
-	addi $s7, $s7, 1				### MARKED
+	addi $s7, $s7, 1
 	sw $s7, __index($zero)
 	
-			
+	## React on index equal 12
+	beq $s7, 12, react
+	# React on new line
+	addi $t3, $zero, 10
+	beq $t3, $t0, react
+	j skip
+react:
+	li $v0, 4
+	la $a0, JOB_ID($zero)
+	syscall
+skip:	
 	move $t3, $zero
 print_loop2:
 	li $v0, 4
