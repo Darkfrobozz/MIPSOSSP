@@ -270,7 +270,7 @@ job_getc_infinite_loop:
 	li $v0, 12
 	teqi $zero, 0    
 	
-	# ASCII value of key pressed now in $v0
+	# Length is save in v0
 	addi $s5, $v0, 0
 	
 	# Use the MARS builtin system call (4) to print strings.
@@ -288,14 +288,14 @@ job_getc_infinite_loop:
 	# Print buffer loop
 #	addi $s1, $s1, 1
 #skip:
-#	addi $s6, $zero, 0
-#print_loop:
-#	li $v0, 4
-#	sll $s2, $s6, 2
-#	la $a0, buffer($s2)
-#	syscall
-#	addi $s6, $s6, 1
-#	bne $s1, $s6, print_loop
+	addi $s6, $zero, 0
+print_loop:
+	li $v0, 4
+	sll $s2, $s6, 2
+	la $a0, s_buffer($s2)
+	syscall
+	addi $s6, $s6, 1
+	bne $s5, $s6, print_loop
 	
 	j job_getc_infinite_loop
 
