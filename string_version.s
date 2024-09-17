@@ -19,6 +19,7 @@
 	.data
 	.align 2
 	buffer: .space 12
+	s_buffer: .space 12
 	.text
 
 main:
@@ -287,14 +288,14 @@ job_getc_infinite_loop:
 	# Print buffer loop
 	addi $s1, $s1, 1
 skip:
-	addi $s6, $zero, 0
-print_loop:
-	li $v0, 4
-	sll $s2, $s6, 2
-	la $a0, buffer($s2)
-	syscall
-	addi $s6, $s6, 1
-	bne $s1, $s6, print_loop
+#	addi $s6, $zero, 0
+#print_loop:
+#	li $v0, 4
+#	sll $s2, $s6, 2
+#	la $a0, buffer($s2)
+#	syscall
+#	addi $s6, $s6, 1
+#	bne $s1, $s6, print_loop
 	
 	j job_getc_infinite_loop
 
@@ -332,7 +333,8 @@ __context_array:   __job_0_context
 
 __running: 	.word -1 # ID of currently running job.
 __ready: 	.word -1 # ID of job ready to run.
-__waiting:	.word -1 # ID of job blocked waiting for I/O action to complete. 
+__waiting:	.word -1 # ID of job blocked waiting for I/O action to complete.
+__index:	.word 0 # index in array
 
 # Allocate storage for the kernel stack. The stack grows from high addresses 
 # towards low addresses. 
@@ -605,6 +607,7 @@ TODO_4: # Put the jid of the caller in register $a0.
 	j __return_from_exception
    	  	
 __system_call_getc:
+	# sw $zero, __index($zero)
 
 	# As of now: 
 	#   $k0 - Job ID of caller.
@@ -808,7 +811,33 @@ __getc_system_call_pending:
 	
 TODO_8:	# Before resuming the waiting job, put the ASCII value of the pressed
 	# key in register $v0.
-	lw $v0, 0($k1)
+	lw $t0, 0($k1)
+	# Increment index
+	lw $s7, __index($zero)
+	li $v0, 1
+	move $a0, $s7
+	syscall
+	
+	sll $t1, $s7, 2
+	sw $t0, s_buffer($t1)
+	# Last use t1
+	addi $s7, $s7, 1				### MARKED
+	sw $s7, __index($zero)
+	
+			
+	move $t3, $zero
+print_loop2:
+	li $v0, 4
+	sll $t1, $t3, 2
+	la $a0, s_buffer($t1)
+	syscall
+	addi $t3, $t3, 1
+	bne $t3, $s7, print_loop2
+
+		
+	# key in register $v0.
+	move $v0, $t0
+
 	# andi $v0, $v0, 0x000000ff
 	
 	# TIP: $k1 contains the address of the memory mapped receiver data register. 
