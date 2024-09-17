@@ -789,15 +789,7 @@ __getc_system_call_pending:
 	
 	# Svap waiting task and running task
 	
-	lw $k0, __waiting
-	lw $k1, __running
-	sw $k0, __running
-	sw $k1, __ready
-	
-	# No job is waiting anymore. 
-	
-	li $t0, -1
-	sw $t0, __waiting
+	lw $k0, __running
 	
 	# $k0 holds id of job waiting for input, restore the context of this job. 
 	
@@ -834,6 +826,46 @@ react:
 	li $v0, 4
 	la $a0, JOB_ID($zero)
 	syscall
+	
+	# Get contexts
+	lw $k0, __waiting
+	lw $k1, __running
+	
+	# Swap!
+	sw $k0, __running
+	sw $k1, __ready
+	
+	# No job is waiting anymore. 
+	
+	li $t0, -1
+	sw $t0, __waiting
+	
+	jal __restore_job_context
+	
+	lw $at, 20($k0) 
+
+	# NOTE: From this point no pseudo instructions can be used. 
+	
+	# Done handling the interupt, enable all interrupts.
+	
+	# Get content of the STATUS register.  
+	
+	mfc0 $k0, $12
+	
+	# Set bit 0 (interrupt enable) to 1.
+	
+	li $k1, 1
+	or $k0, $k0, $k1
+	
+	# Update the STATUS register. 
+	
+	mtc0 $k0, $12 
+	
+	# Resume execution of the waiting job. The eret instruction sets $pc to the
+	# value of EPC.
+	move $v0, $s7
+	
+	eret
 skip:	
 	move $t3, $zero
 print_loop2:
