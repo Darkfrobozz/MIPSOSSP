@@ -16,10 +16,10 @@
 ###############################################################################
 
 	.globl main
-	.text
-	
 	.data
-	input_buffer: .space 11
+	.align 2
+	buffer: .space 12
+	.text
 
 main:
 	j boot 
@@ -238,10 +238,8 @@ job_getc:
 
 	# Use the built in version of the getc system call
 	
-	la $a0, input_buffer
-	li $a1, 10
-	li $v0, 8		# System call code (8) read_string. #MY
-	syscall 		# Execute the Mars built-in system call (8) read_string
+	li $v0, 12		# System call code (12) read_char.
+	syscall 		# Execute the Mars built-in system call (12) read_char.	
 	
 	# ASCII value of key pressed now in $v0
 
@@ -257,7 +255,7 @@ job_getc:
 	li $s0, 0xabcd1234
  
 	# Enter infintite loop. 
-	
+	addi $s1, $zero, 0
 job_getc_infinite_loop:
 	
 	# Use the MARS builtin system call (4) to print strings.
@@ -266,19 +264,37 @@ job_getc_infinite_loop:
 	la $a0, PRESS_MMIO_KEY  # String to print.
 	syscall 		# Execute the Mars built-in system call (4) to print string.	
 
-	# Execute the custom getc system call (system call 8).
-
-	li $v0, 8
+	# Execute the custom getc system call (system call 12).
+	
+	li $v0, 12
 	teqi $zero, 0    
 	
 	# ASCII value of key pressed now in $v0
+	addi $s5, $v0, 0
 	
 	# Use the MARS builtin system call (4) to print strings.
 
 	sb $v0, CUSTOM_GETC_RESULT + 17
 	li $v0, 4
 	la $a0, CUSTOM_GETC_RESULT
-	syscall 
+	syscall
+	
+	beq $s1, 11, skip
+	# Get char from adress and put in buffer
+	sll $s2, $s1, 2         # Multiply by 4.
+	sw $s5, buffer($s2)
+	
+	# Print buffer loop
+	addi $s1, $s1, 1
+skip:
+	addi $s6, $zero, 0
+print_loop:
+	li $v0, 4
+	sll $s2, $s6, 2
+	la $a0, buffer($s2)
+	syscall
+	addi $s6, $s6, 1
+	bne $s1, $s6, print_loop
 	
 	j job_getc_infinite_loop
 
@@ -568,8 +584,7 @@ __trap_handler:
    	
 TODO_3: # Jump to label __system_call_getc for system call code 12.
 	
-   	#beq $v0, 12, __system_call_getc
-   	beq $v0, 8, __system_call_getc
+   	beq $v0, 12, __system_call_getc
    	
    	j __unsported_system_call
  
@@ -762,7 +777,7 @@ __kbd_interrupt:
 	
 	lw $k0, __waiting
 	li $k1, -1
-	beq $k0, $k1, __return_from_interrupt # beq if no waiting job
+	beq $k0, $k1, __return_from_interrupt 
 	
 	
 __getc_system_call_pending:
