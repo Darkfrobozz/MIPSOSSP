@@ -177,7 +177,7 @@ job_increment:
 	# Use the MARS builtin system call (4) to print string.
 	
 	li $v0, 4
-	la $a0, NL
+	la $a0, NL($zero)
 	syscall
 	
 	# Done printing.
@@ -275,10 +275,10 @@ job_getc_infinite_loop:
 	
 	# Use the MARS builtin system call (4) to print strings.
 
-	sb $v0, CUSTOM_GETC_RESULT + 17
-	li $v0, 4
-	la $a0, CUSTOM_GETC_RESULT
-	syscall
+	# sb $v0, CUSTOM_GETC_RESULT + 17
+	# li $v0, 4
+	# la $a0, CUSTOM_GETC_RESULT
+	# syscall
 	
 #	beq $s1, 11, skip
 	# Get char from adress and put in buffer
@@ -288,6 +288,10 @@ job_getc_infinite_loop:
 	# Print buffer loop
 #	addi $s1, $s1, 1
 #skip:
+	# Prints new line
+	li $v0, 4
+	la $a0, NL
+	syscall
 	addi $s6, $zero, 0
 print_loop:
 	li $v0, 4
@@ -607,7 +611,7 @@ TODO_4: # Put the jid of the caller in register $a0.
 	j __return_from_exception
    	  	
 __system_call_getc:
-	# sw $zero, __index($zero)
+	sw $zero, __index($zero)
 
 	# As of now: 
 	#   $k0 - Job ID of caller.
@@ -823,9 +827,9 @@ TODO_8:	# Before resuming the waiting job, put the ASCII value of the pressed
 	beq $t3, $t0, react
 	j skip
 react:
-	li $v0, 4
-	la $a0, JOB_ID($zero)
-	syscall
+	#li $v0, 4
+	#la $a0, JOB_ID($zero)
+	#syscall
 	
 	# Get contexts
 	lw $k0, __waiting
@@ -875,6 +879,10 @@ print_loop2:
 	syscall
 	addi $t3, $t3, 1
 	bne $t3, $s7, print_loop2
+	# Prints new line
+	li $v0, 4
+	la $a0, NL($zero)
+	syscall
 
 		
 	# key in register $v0.
